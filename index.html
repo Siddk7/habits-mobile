@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Habits">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f5f9f5">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Habits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%;background:#f5f9f5}
+body{height:100%;overflow:hidden;background:#f5f9f5;color:#1a2e1a;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;-webkit-touch-callout:none}
+
+#app{height:100%;height:100dvh;display:flex;flex-direction:column;max-width:430px;margin:0 auto;background:#f5f9f5}
+
+/* ── Header ── */
+.header{
+  padding:calc(env(safe-area-inset-top,0px) + 20px) 24px 0;
+  flex-shrink:0;
+}
+.header-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px}
+.date-block{}
+.date-today{font-family:'DM Serif Display',serif;font-size:28px;color:#1a2e1a;letter-spacing:-.5px;line-height:1.1}
+.date-sub{font-size:13px;color:#7aab7a;font-weight:500;margin-top:2px}
+.sync-btn-small{
+  width:36px;height:36px;border-radius:50%;
+  background:#fff;border:1.5px solid #c8dfc8;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:16px;flex-shrink:0;
+  transition:background .12s;
+}
+.sync-btn-small:active{background:#e8f2e8}
+.sync-btn-small.spinning{animation:spin .8s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* ── Progress ring ── */
+.progress-section{
+  display:flex;align-items:center;gap:16px;
+  padding:16px 24px 0;
+  flex-shrink:0;
+}
+.ring-wrap{position:relative;width:72px;height:72px;flex-shrink:0}
+.ring-svg{width:72px;height:72px;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:#e0ede0;stroke-width:6}
+.ring-fill{fill:none;stroke:#4a9e3f;stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .6s cubic-bezier(.22,1,.36,1)}
+.ring-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.ring-pct{font-family:'DM Serif Display',serif;font-size:16px;color:#1a2e1a;line-height:1}
+.ring-done{font-size:10px;font-weight:600;color:#7aab7a;letter-spacing:.05em}
+
+.progress-text{flex:1}
+.pt-title{font-family:'DM Serif Display',serif;font-size:18px;color:#1a2e1a;line-height:1.2;margin-bottom:4px}
+.pt-sub{font-size:13px;color:#7aab7a;line-height:1.5}
+.streak-tag{display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #deeede;border-radius:100px;padding:3px 10px;font-size:12px;font-weight:600;color:#1a2e1a;margin-top:6px}
+
+/* ── Checklist ── */
+.checklist-scroll{
+  flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;padding:16px 24px;
+  min-height:0;
+}
+.checklist-scroll::-webkit-scrollbar{display:none}
+
+.habit-item{
+  display:flex;align-items:center;gap:14px;
+  background:#fff;border-radius:16px;border:1px solid #deeede;
+  padding:14px 16px;
+  margin-bottom:10px;
+  cursor:pointer;
+  transition:all .15s;
+  -webkit-user-select:none;user-select:none;
+}
+.habit-item:active{transform:scale(.98);background:#f7fbf7}
+.habit-item.checked{background:#f2fbf2;border-color:#b8ddb8}
+
+.hi-check{
+  width:28px;height:28px;border-radius:8px;
+  border:2px solid #c8dfc8;
+  background:#fff;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .15s;
+}
+.habit-item.checked .hi-check{background:#4a9e3f;border-color:#4a9e3f}
+.hi-check-inner{
+  width:7px;height:12px;
+  border:2.5px solid #fff;
+  border-top:none;border-left:none;
+  transform:rotate(45deg) translateY(-1px);
+  opacity:0;transition:opacity .12s;
+}
+.habit-item.checked .hi-check-inner{opacity:1}
+
+.hi-content{flex:1;min-width:0}
+.hi-name{font-size:16px;font-weight:500;color:#1a2e1a;transition:color .15s}
+.habit-item.checked .hi-name{color:#7aab7a}
+.hi-emoji{font-size:20px;flex-shrink:0}
+
+/* Completion banner */
+.complete-banner{
+  margin:0 0 12px;
+  background:linear-gradient(135deg,#1a2e1a,#2a5a2a);
+  border-radius:16px;padding:18px 20px;
+  display:none;
+}
+.complete-banner.show{display:block}
+.cb-title{font-family:'DM Serif Display',serif;font-size:20px;color:#f5f9f5;margin-bottom:4px}
+.cb-sub{font-size:13px;color:rgba(245,249,245,.65);line-height:1.5}
+
+/* ── Bottom bar ── */
+.bottom-bar{
+  flex-shrink:0;
+  padding:12px 24px;
+  padding-bottom:calc(env(safe-area-inset-bottom,0px) + 12px);
+  display:flex;gap:10px;
+}
+.cfg-btn{
+  width:52px;height:52px;border-radius:50%;
+  background:#fff;border:1.5px solid #deeede;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:20px;flex-shrink:0;
+  transition:background .12s;
+}
+.cfg-btn:active{background:#f0f7f0}
+.sync-full-btn{
+  flex:1;height:52px;border-radius:100px;
+  background:#1a2e1a;border:none;
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;
+  color:#f5f9f5;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:background .12s;
+}
+.sync-full-btn:active{background:#2a4a2a}
+.sync-full-btn.syncing{background:#4a7c4a}
+
+/* ── Sync status pill ── */
+.sync-status-pill{
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  gap:5px;padding:6px 16px;
+  background:#fff;border:1px solid #deeede;border-radius:100px;
+  font-size:12px;font-weight:500;color:#7aab7a;
+  margin:0 24px 4px;
+}
+.ss-dot{width:6px;height:6px;border-radius:50%;background:#4a9e3f;flex-shrink:0}
+.ss-dot.syncing{background:#e8c43a;animation:pulse 1s infinite}
+.ss-dot.error{background:#e85a3a}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── Config modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal{background:#fff;border-radius:24px 24px 0 0;padding:28px 24px calc(env(safe-area-inset-bottom,0px) + 24px);width:100%;transform:translateY(20px);transition:transform .3s cubic-bezier(.22,1,.36,1)}
+.modal-overlay.show .modal{transform:translateY(0)}
+.modal-handle{width:36px;height:4px;border-radius:2px;background:#deeede;margin:0 auto 20px}
+.modal-title{font-family:'DM Serif Display',serif;font-size:22px;color:#1a2e1a;margin-bottom:6px}
+.modal-sub{font-size:13px;color:#6b8f6b;line-height:1.6;margin-bottom:20px}
+.modal-sub a{color:#4a9e3f}
+.modal-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#7aab7a;margin-bottom:6px;display:block}
+.modal-input{width:100%;border:1.5px solid #c8dfc8;border-radius:12px;padding:12px 14px;font-size:15px;font-family:'DM Sans',sans-serif;color:#1a2e1a;background:#fff;outline:none;margin-bottom:14px}
+.modal-input:focus{border-color:#4a9e3f}
+.modal-save{width:100%;padding:15px;background:#1a2e1a;border:none;border-radius:14px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:#f5f9f5;cursor:pointer;margin-top:4px}
+.modal-save:active{background:#2a4a2a}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 80px);left:50%;transform:translateX(-50%) translateY(20px);background:#1a2e1a;color:#f5f9f5;font-size:13px;font-weight:600;padding:10px 22px;border-radius:100px;opacity:0;pointer-events:none;transition:opacity .2s,transform .3s cubic-bezier(.22,1,.36,1);white-space:nowrap;z-index:99}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* iOS tip */
+#ios-tip{display:none;position:fixed;bottom:0;left:0;right:0;background:#1a2e1a;color:#f5f9f5;padding:16px 20px calc(env(safe-area-inset-bottom,0px) + 16px);z-index:200;border-radius:20px 20px 0 0;font-size:14px;line-height:1.6;box-shadow:0 -8px 32px rgba(0,0,0,.25)}
+#ios-tip.show{display:block}
+#ios-tip-close{margin-top:12px;width:100%;padding:12px;border-radius:12px;border:1.5px solid rgba(245,249,245,.2);background:transparent;color:#f5f9f5;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-row">
+      <div class="date-block">
+        <div class="date-today" id="date-today">Monday</div>
+        <div class="date-sub" id="date-sub">June 16</div>
+      </div>
+      <div class="sync-btn-small" id="sync-icon-btn" onclick="syncNow()" title="Sync">🔄</div>
+    </div>
+  </div>
+
+  <div class="progress-section">
+    <div class="ring-wrap">
+      <svg class="ring-svg" viewBox="0 0 72 72">
+        <circle class="ring-bg" cx="36" cy="36" r="30"/>
+        <circle class="ring-fill" id="ring-fill" cx="36" cy="36" r="30" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+      </svg>
+      <div class="ring-text">
+        <div class="ring-pct" id="ring-pct">0%</div>
+        <div class="ring-done" id="ring-done">0/7</div>
+      </div>
+    </div>
+    <div class="progress-text">
+      <div class="pt-title" id="pt-title">Today's habits</div>
+      <div class="pt-sub" id="pt-sub">Tap each habit as you complete it</div>
+      <div class="streak-tag">🔥 <span id="streak-val">0</span> day streak</div>
+    </div>
+  </div>
+
+  <div class="sync-status-pill" id="sync-pill">
+    <div class="ss-dot" id="ss-dot"></div>
+    <span id="ss-text">Not synced</span>
+  </div>
+
+  <div class="checklist-scroll">
+    <div class="complete-banner" id="complete-banner">
+      <div class="cb-title">All done today 🎉</div>
+      <div class="cb-sub">Perfect day. Keep the streak alive tomorrow.</div>
+    </div>
+    <div id="habit-list"></div>
+  </div>
+
+  <div class="bottom-bar">
+    <div class="cfg-btn" onclick="openConfig()">⚙️</div>
+    <button class="sync-full-btn" id="sync-full-btn" onclick="syncNow()">
+      <span id="sync-btn-text">Sync with Mac</span>
+    </button>
+  </div>
+</div>
+
+<!-- Config modal -->
+<div class="modal-overlay" id="modal" onclick="closeConfigOutside(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Connect to Mac</div>
+    <div class="modal-sub">
+      Use the same Bin ID and Key from your Mac habits app. Both will share the same data.
+    </div>
+    <label class="modal-label">Bin ID</label>
+    <input class="modal-input" id="cfg-bin" placeholder="e.g. 6671abc123...">
+    <label class="modal-label">Master Key</label>
+    <input class="modal-input" id="cfg-key" placeholder="$2a$10$...">
+    <button class="modal-save" onclick="saveConfig()">Save & Connect</button>
+  </div>
+</div>
+
+<div id="ios-tip">
+  <strong>Add to your home screen</strong><br>
+  Tap Share ⎙ in Safari → <strong>"Add to Home Screen"</strong>
+  <br><button id="ios-tip-close">Got it</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var HABITS=[
+  {id:'h1',name:'Wake up at 6 AM',emoji:'⏰'},
+  {id:'h2',name:'Make Bed',emoji:'🛏️'},
+  {id:'h3',name:'Cold Shower',emoji:'🚿'},
+  {id:'h4',name:'Journal',emoji:'📓'},
+  {id:'h5',name:'Workout',emoji:'💪'},
+  {id:'h6',name:'Read 20 min',emoji:'📖'},
+  {id:'h7',name:"Don't",emoji:'🚫'},
+];
+var DAY_NAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+var HS=loadHS();
+var syncTimer=null;
+
+function loadHS(){try{var r=localStorage.getItem('habits_data');if(r)return JSON.parse(r);}catch(e){}return{};}
+function saveHS(){localStorage.setItem('habits_data',JSON.stringify(HS));}
+function monthKey(y,m){return y+'-'+(m<10?'0':'')+m;}
+function daysInMonth(y,m){return new Date(y,m,0).getDate();}
+
+function getTodayKey(){var t=new Date();return{y:t.getFullYear(),m:t.getMonth()+1,di:t.getDate()-1};}
+
+function getMonthGrid(y,m){
+  var k=monthKey(y,m),days=daysInMonth(y,m);
+  if(!HS[k]){HS[k]={};HABITS.forEach(function(h){HS[k][h.id]=new Array(days).fill(false);});}
+  else{HABITS.forEach(function(h){if(!HS[k][h.id]||HS[k][h.id].length!==days)HS[k][h.id]=new Array(days).fill(false);});}
+  return HS[k];
+}
+
+function toggle(hid){
+  var t=getTodayKey(),g=getMonthGrid(t.y,t.m);
+  g[hid][t.di]=!g[hid][t.di];
+  saveHS();scheduleSyncPush();renderAll();
+  // Haptic if available
+  if(navigator.vibrate)navigator.vibrate(30);
+}
+
+function getStreak(){
+  var streak=0,d=new Date();
+  for(var i=0;i<365;i++){
+    var y=d.getFullYear(),m=d.getMonth()+1,di=d.getDate()-1;
+    var g=getMonthGrid(y,m);
+    if(HABITS.some(function(h){return g[h.id][di];}))streak++;
+    else if(i>0)break;
+    d.setDate(d.getDate()-1);
+  }
+  return streak;
+}
+
+function renderAll(){
+  var today=new Date();
+  var t=getTodayKey(),g=getMonthGrid(t.y,t.m);
+
+  // Date header
+  document.getElementById('date-today').textContent=DAY_NAMES[today.getDay()];
+  document.getElementById('date-sub').textContent=MONTH_NAMES[t.m-1]+' '+today.getDate()+', '+t.y;
+
+  // Progress
+  var done=HABITS.filter(function(h){return g[h.id][t.di];}).length;
+  var total=HABITS.length,pct=Math.round((done/total)*100);
+  var circumference=188.5;
+  var offset=circumference-(pct/100)*circumference;
+  document.getElementById('ring-fill').style.strokeDashoffset=offset;
+  document.getElementById('ring-pct').textContent=pct+'%';
+  document.getElementById('ring-done').textContent=done+'/'+total;
+  document.getElementById('streak-val').textContent=getStreak();
+
+  // Title
+  var titles=['Start your day','Keep going!','Halfway there!','Almost done!','You\'re crushing it!','One more!','All done! 🎉'];
+  var subs=['Tap each habit as you complete it','Good progress — keep the momentum','More than half done today','Almost there — finish strong','Just one left — you\'ve got this','Tap the last one!','Perfect day — come back tomorrow'];
+  var idx=Math.min(done,6);
+  document.getElementById('pt-title').textContent=titles[idx];
+  document.getElementById('pt-sub').textContent=subs[idx];
+
+  // Complete banner
+  document.getElementById('complete-banner').classList.toggle('show',done===total);
+
+  // Habit list
+  var list=document.getElementById('habit-list');list.innerHTML='';
+  HABITS.forEach(function(h){
+    var checked=g[h.id][t.di];
+    var item=document.createElement('div');item.className='habit-item'+(checked?' checked':'');
+    item.innerHTML=
+      '<div class="hi-check"><div class="hi-check-inner"></div></div>'+
+      '<div class="hi-content"><div class="hi-name">'+h.name+'</div></div>'+
+      '<div class="hi-emoji">'+h.emoji+'</div>';
+    item.addEventListener('click',function(){toggle(h.id);});
+    list.appendChild(item);
+  });
+}
+
+/* ── JSONBin Sync ── */
+function getBinConfig(){return{binId:localStorage.getItem('habits_bin_id'),key:localStorage.getItem('habits_bin_key')};}
+
+function setSyncStatus(state,msg){
+  var dot=document.getElementById('ss-dot'),text=document.getElementById('ss-text');
+  var btn=document.getElementById('sync-full-btn'),btnText=document.getElementById('sync-btn-text');
+  dot.className='ss-dot'+(state==='syncing'?' syncing':state==='error'?' error':'');
+  text.textContent=msg;
+  if(state==='syncing'){btn.classList.add('syncing');btnText.textContent='Syncing...';}
+  else{btn.classList.remove('syncing');btnText.textContent='Sync with Mac';}
+}
+
+function scheduleSyncPush(){
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(pushToCloud,2000);
+}
+
+async function pushToCloud(){
+  var cfg=getBinConfig();if(!cfg.binId||!cfg.key){setSyncStatus('error','Not configured — tap ⚙️');return;}
+  setSyncStatus('syncing','Saving to cloud...');
+  try{
+    var res=await fetch('https://api.jsonbin.io/v3/b/'+cfg.binId,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':cfg.key,'X-Bin-Versioning':'false'},
+      body:JSON.stringify({habits:HS,updated:new Date().toISOString()})
+    });
+    if(!res.ok)throw new Error(res.status);
+    setSyncStatus('ok','Saved '+new Date().toLocaleTimeString());
+  }catch(e){setSyncStatus('error','Sync failed');}
+}
+
+async function pullFromCloud(){
+  var cfg=getBinConfig();if(!cfg.binId||!cfg.key){setSyncStatus('error','Not configured — tap ⚙️');return;}
+  setSyncStatus('syncing','Syncing with Mac...');
+  try{
+    var res=await fetch('https://api.jsonbin.io/v3/b/'+cfg.binId+'/latest',{headers:{'X-Master-Key':cfg.key}});
+    if(!res.ok)throw new Error(res.status);
+    var data=await res.json();
+    if(data.record&&data.record.habits){
+      // Merge: cloud wins for other days, local wins for today
+      var t=getTodayKey(),mk=monthKey(t.y,t.m);
+      var cloudData=data.record.habits;
+      // Copy all cloud data
+      Object.keys(cloudData).forEach(function(k){if(k!==mk)HS[k]=cloudData[k];});
+      // For current month, merge day by day — local today takes priority
+      if(cloudData[mk]){
+        HABITS.forEach(function(h){
+          if(!HS[mk])HS[mk]={};
+          if(!HS[mk][h.id])HS[mk][h.id]=cloudData[mk][h.id]||new Array(daysInMonth(t.y,t.m)).fill(false);
+          // Overwrite all days except today with cloud data
+          var cloudArr=cloudData[mk][h.id]||[];
+          for(var i=0;i<cloudArr.length;i++){if(i!==t.di)HS[mk][h.id][i]=cloudArr[i];}
+        });
+      }
+      saveHS();renderAll();
+    }
+    setSyncStatus('ok','Synced '+new Date().toLocaleTimeString());
+  }catch(e){setSyncStatus('error','Sync failed');}
+}
+
+function syncNow(){
+  document.getElementById('sync-icon-btn').classList.add('spinning');
+  pullFromCloud().then(function(){
+    setTimeout(function(){document.getElementById('sync-icon-btn').classList.remove('spinning');},800);
+  });
+}
+
+/* ── Config ── */
+function openConfig(){
+  var cfg=getBinConfig();
+  document.getElementById('cfg-bin').value=cfg.binId||'';
+  document.getElementById('cfg-key').value=cfg.key||'';
+  document.getElementById('modal').classList.add('show');
+}
+function closeConfig(){document.getElementById('modal').classList.remove('show');}
+function closeConfigOutside(e){if(e.target===document.getElementById('modal'))closeConfig();}
+async function saveConfig(){
+  var binId=document.getElementById('cfg-bin').value.trim();
+  var key=document.getElementById('cfg-key').value.trim();
+  if(!binId||!key){toast('Fill in both fields');return;}
+  localStorage.setItem('habits_bin_id',binId);
+  localStorage.setItem('habits_bin_key',key);
+  closeConfig();toast('Connected! Syncing...');
+  await pullFromCloud();
+}
+
+var toastT;
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show');},2000);}
+
+/* ── PWA ── */
+var isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+var isStandalone=window.matchMedia('(display-mode: standalone)').matches||(window.navigator.standalone===true);
+var dismissed=localStorage.getItem('habits_install_dismissed');
+if(isIOS&&!isStandalone&&!dismissed){setTimeout(function(){document.getElementById('ios-tip').classList.add('show');},3000);}
+document.getElementById('ios-tip-close').addEventListener('click',function(){document.getElementById('ios-tip').classList.remove('show');localStorage.setItem('habits_install_dismissed','1');});
+var deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredPrompt=e;});
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js');});}
+
+/* ── Init ── */
+var cfg=getBinConfig();
+if(cfg.binId&&cfg.key){pullFromCloud();}
+else{setSyncStatus('error','Not configured — tap ⚙️ to connect');}
+renderAll();
+// Auto-sync every 5 minutes
+setInterval(function(){var c=getBinConfig();if(c.binId&&c.key)pullFromCloud();},300000);
+</script>
+</body>
+</html>
