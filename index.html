@@ -253,7 +253,7 @@ body{height:100%;overflow:hidden;background:#f5f9f5;color:#1a2e1a;font-family:'D
 <div class="toast" id="toast"></div>
 
 <script>
-var HABITS=[
+var DEFAULT_HABITS=[
   {id:'h1',name:'Wake up at 6 AM',emoji:'⏰'},
   {id:'h2',name:'Make Bed',emoji:'🛏️'},
   {id:'h3',name:'Cold Shower',emoji:'🚿'},
@@ -262,6 +262,9 @@ var HABITS=[
   {id:'h6',name:'Read 20 min',emoji:'📖'},
   {id:'h7',name:"Don't",emoji:'🚫'},
 ];
+var HABITS=loadHabits();
+function loadHabits(){try{var r=localStorage.getItem('habits_list');if(r){var h=JSON.parse(r);if(h&&h.length)return h;}}catch(e){}return DEFAULT_HABITS.slice();}
+function saveHabits(){localStorage.setItem('habits_list',JSON.stringify(HABITS));}
 var DAY_NAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 var MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -385,6 +388,7 @@ async function pullFromCloud(){
     if(data.record&&data.record.habits){
       // Merge: cloud wins for other days, local wins for today
       var t=getTodayKey(),mk=monthKey(t.y,t.m);
+      if(data.record.habitList&&data.record.habitList.length){HABITS=data.record.habitList;saveHabits();}
       var cloudData=data.record.habits;
       // Copy all cloud data
       Object.keys(cloudData).forEach(function(k){if(k!==mk)HS[k]=cloudData[k];});
